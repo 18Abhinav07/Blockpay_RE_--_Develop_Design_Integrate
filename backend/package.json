@@ -1,0 +1,11 @@
+{
+  "name": "blockpay-backend",
+  "version": "1.0.0",
+  "description": "The web2 backend for Blockpay application",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Abhinav Pangaria",
+  "license": "SEE LICENSE IN license"
+}
