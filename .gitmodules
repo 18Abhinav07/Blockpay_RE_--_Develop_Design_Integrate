@@ -1,3 +1,15 @@
 [submodule "web3/lib/forge-std"]
 	path = web3/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "web3/lib/chainlink-brownie-contracts"]
+	path = web3/lib/chainlink-brownie-contracts
+	url = https://github.com/smartcontractkit/chainlink-brownie-contracts
+[submodule "web3/lib/openzeppelin-contracts"]
+	path = web3/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "web3/lib/v3-periphery"]
+	path = web3/lib/v3-periphery
+	url = https://github.com/Uniswap/v3-periphery
+[submodule "web3/lib/v3-core"]
+	path = web3/lib/v3-core
+	url = https://github.com/Uniswap/v3-core
