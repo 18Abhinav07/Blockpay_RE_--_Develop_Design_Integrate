@@ -4,8 +4,19 @@
   "description": "The web2 backend for Blockpay application",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "author": "Abhinav Pangaria",
-  "license": "SEE LICENSE IN license"
+  "license": "SEE LICENSE IN license",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "mocha": "^10.8.1",
+    "mongodb": "^6.10.0",
+    "mongoose": "^8.7.3",
+    "morgan": "^1.10.0"
+  }
 }

@@ -1,0 +1,6 @@
+mongodb
+mongoose
+axios
+bcrypt
+body-parser
+express
