@@ -18,9 +18,7 @@ contract MockUsdc is ERC20, Ownable, Pausable, ReentrancyGuard {
     event Minted(address indexed to, uint256 amount);
     event Burned(address indexed from, uint256 amount);
 
-    constructor() ERC20("USD Coin", "USDC") Ownable(msg.sender) {
-        _transferOwnership(_msgSender());
-    }
+    constructor() ERC20("USD Coin", "USDC") Ownable(msg.sender) {}
 
     /**
      * @dev Mints new tokens, respecting max supply
@@ -64,15 +62,6 @@ contract MockUsdc is ERC20, Ownable, Pausable, ReentrancyGuard {
     function unpause() external onlyOwner {
         _unpause();
         emit Unpaused(_msgSender());
-    }
-
-    /**
-     * @dev Override the transferOwnership function to emit a transfer event.
-     */
-    function transferOwnership(address newOwner) public override onlyOwner {
-        require(newOwner != address(0), "Ownership: New owner is the zero address");
-        emit OwnershipTransferred(owner(), newOwner);
-        _transferOwnership(newOwner);
     }
 
     /**

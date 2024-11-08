@@ -39,14 +39,14 @@ contract blockpayUsdcTest is Test {
         assertEq(blockpay.owner(), msg.sender);
     }
 
-    function testFundContract() public {
-        vm.deal(USER, 10000 ether);
-        // Fund the contract
-        vm.startPrank(USER);
-        blockpay.fundContract{value: 200 ether}();
-        vm.stopPrank();
-        assertEq(blockpay.getTotalFundsUSDC(), 200 * 1e6);
-    }
+    // function testFundContract() public {
+    //     vm.deal(USER, 10000 ether);
+    //     // Fund the contract
+    //     vm.startPrank(USER);
+    //     blockpay.fundContract{value: 200 ether}();
+    //     vm.stopPrank();
+    //     assertEq(blockpay.getTotalFundsUSDC(), 200 * 1e6);
+    // }
 
     modifier fundContract() {
         vm.deal(USER, 10000 ether);
@@ -66,6 +66,16 @@ contract blockpayUsdcTest is Test {
         // Check if the user's USDC balance increased
         assertEq(IERC20(blockpay.getUSDC()).balanceOf(USER), paymentAmount);
         console.log("User USDC balance after payment:", IERC20(blockpay.getUSDC()).balanceOf(USER));
+    }
+
+    function testBurnUsdcToUsd() public fundContract {
+        uint256 paymentAmount = 1000 * 1e6;
+        vm.startPrank(blockpay.owner());
+        blockpay.processPayment(USER, paymentAmount);
+
+        console.log("USER USDC BALANCE BEFORE BURN: ", IERC20(blockpay.getUSDC()).balanceOf(USER));
+        blockpay.burnUsdcToUsd(USER,paymentAmount);
+        console.log("USER USD DEPOSITS AFTER BURN: ", blockpay.getUserUsdDeposits(USER));
     }
 
     

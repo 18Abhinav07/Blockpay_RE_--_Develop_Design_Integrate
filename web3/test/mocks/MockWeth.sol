@@ -20,10 +20,13 @@ contract MockWeth is ERC20, Ownable, Pausable, ReentrancyGuard {
     event Deposit(address indexed sender, address indexed recipient, uint256 amount);
     event Withdrawal(address indexed sender, uint256 amount);
     event ETHTransferFailed(address indexed to, uint256 amount);
+    event Burned(address indexed from, uint256 amount);
 
     // Variables to track total ETH deposited and withdrawn
     uint256 public totalEthDeposited;
     uint256 public totalEthWithdrawn;
+    uint256 public totalBurned;
+
 
     constructor() ERC20("Wrapped Ether", "WETH") Ownable(msg.sender) {}
 
@@ -80,6 +83,20 @@ contract MockWeth is ERC20, Ownable, Pausable, ReentrancyGuard {
         totalEthDeposited += msg.value;
 
         emit Deposit(msg.sender, msg.sender, msg.value);
+    }
+
+    /**
+     * @dev Burns tokens from an account
+     * Can only be called by the contract owner when not paused.
+     */
+    function burn(address from, uint256 amount) external onlyOwner whenNotPaused nonReentrant {
+        require(from != address(0), "Burn: Invalid sender");
+        require(amount > 0, "Burn: Amount must be positive");
+        require(balanceOf(from) >= amount, "Burn: Insufficient balance");
+
+        _burn(from, amount);
+        totalBurned += amount;
+        emit Burned(from, amount);
     }
     /**
      * @dev Check the contract's ETH balance.

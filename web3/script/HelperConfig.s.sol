@@ -27,7 +27,9 @@ contract HelperConfig is Script {
             currentNetwork = getAnvilConfig();
         } else if (block.chainid == 11155111) {
             currentNetwork = getSepoliaConfig();
-        } else {
+        } else if (block.chainid == 80002) {
+            currentNetwork = getAmoyConfig();
+        }else {
             revert("Unsupported network");
         }
     }
@@ -59,6 +61,18 @@ contract HelperConfig is Script {
         console.log("Sepolia network detected");
         vm.startBroadcast();
         address aggregator = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
+        MockWeth weth = new MockWeth();
+        MockUsdc usdc = new MockUsdc();
+        MockSwapRouter router = new MockSwapRouter(payable(address(weth)), payable(address(usdc)), aggregator);
+
+        vm.stopBroadcast();
+        return NetworkConfig(aggregator, payable(address(router)), payable(address(weth)), payable(address(usdc)));
+    }
+
+       function getAmoyConfig() internal returns (NetworkConfig memory) {
+        console.log("Polygon Amoy network detected");
+        vm.startBroadcast();
+        address aggregator = 0xF0d50568e3A7e8259E16663972b11910F89BD8e7;
         MockWeth weth = new MockWeth();
         MockUsdc usdc = new MockUsdc();
         MockSwapRouter router = new MockSwapRouter(payable(address(weth)), payable(address(usdc)), aggregator);
