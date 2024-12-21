@@ -17,7 +17,7 @@ contract HelperConfig is Script {
 
     uint8 public constant DECIMALS = 8;
     // for 1:1 swapping I am changing this to 1e8.
-    int256 public constant INITIAL_PRICE = 1e8;
+    int256 public constant INITIAL_PRICE = 2400e8;
     NetworkConfig public currentNetwork;
 
     constructor() {
@@ -29,7 +29,7 @@ contract HelperConfig is Script {
             currentNetwork = getSepoliaConfig();
         } else if (block.chainid == 80002) {
             currentNetwork = getAmoyConfig();
-        }else {
+        } else {
             revert("Unsupported network");
         }
     }
@@ -69,7 +69,7 @@ contract HelperConfig is Script {
         return NetworkConfig(aggregator, payable(address(router)), payable(address(weth)), payable(address(usdc)));
     }
 
-       function getAmoyConfig() internal returns (NetworkConfig memory) {
+    function getAmoyConfig() internal returns (NetworkConfig memory) {
         console.log("Polygon Amoy network detected");
         vm.startBroadcast();
         address aggregator = 0xF0d50568e3A7e8259E16663972b11910F89BD8e7;

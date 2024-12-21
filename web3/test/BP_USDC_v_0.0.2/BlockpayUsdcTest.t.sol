@@ -49,7 +49,11 @@ contract blockpayUsdcTest is Test {
     // }
 
     modifier fundContract() {
-        vm.deal(USER, 10000 ether);
+        vm.startPrank(blockpay.owner());
+        blockpay.mintUSDCBasedOnUSDPool();
+        vm.stopPrank();
+
+        vm.deal(USER, 100 ether);
         // Fund the contract
         vm.startPrank(USER);
         blockpay.fundContract{value: 2 ether}();
@@ -74,10 +78,7 @@ contract blockpayUsdcTest is Test {
         blockpay.processPayment(USER, paymentAmount);
 
         console.log("USER USDC BALANCE BEFORE BURN: ", IERC20(blockpay.getUSDC()).balanceOf(USER));
-        blockpay.burnUsdcToUsd(USER,paymentAmount);
-        console.log("USER USD DEPOSITS AFTER BURN: ", blockpay.getUserUsdDeposits(USER));
+        blockpay.burnUSDCToUSD(USER, paymentAmount);
+        console.log("USER USD DEPOSITS AFTER BURN: ", blockpay.getUserUSDDeposits(USER));
     }
-
-    
-
 }

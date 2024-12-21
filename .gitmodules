@@ -13,3 +13,6 @@
 [submodule "web3/lib/v3-core"]
 	path = web3/lib/v3-core
 	url = https://github.com/Uniswap/v3-core
+[submodule "web3/lib/account-abstraction"]
+	path = web3/lib/account-abstraction
+	url = https://github.com/eth-infinitism/account-abstraction

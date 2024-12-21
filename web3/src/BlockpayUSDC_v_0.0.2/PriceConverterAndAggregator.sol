@@ -1,22 +1,22 @@
 /**
  * @title PriceConverter
  * @dev Library for converting ETH amounts to USD using Chainlink price feeds.
- * 
+ *
  * @notice This library provides functions to convert ETH amounts to USD based on the latest price data from Chainlink oracles.
- * 
+ *
  * @dev The library uses a constant DECIMALS to handle precision and a constant USD_PRECISION to adjust the price data.
- * 
+ *
  * @dev Functions:
  * - conversion_price: Retrieves the latest price of ETH in USD from a Chainlink oracle.
  * - get_conversion_rate: Converts a given amount of ETH to its equivalent value in USD.
  * - get_version: Retrieves the version of the Chainlink price feed contract.
- * 
+ *
  * @dev Dependencies:
  * - AggregatorV3Interface from Chainlink contracts.
- * 
+ *
  * @param chain The address of the Chainlink price feed contract.
  * @param ETH_amount The amount of ETH to be converted to USD.
- * 
+ *
  * @return conversion_price: The latest price of ETH in USD.
  * @return get_conversion_rate: The equivalent value of the given ETH amount in USD.
  * @return get_version: The version of the Chainlink price feed contract.

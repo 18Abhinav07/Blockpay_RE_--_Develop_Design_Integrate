@@ -1,18 +1,46 @@
 require("dotenv").config({ path: "../.env" });
 const { ethers } = require("ethers");
-const { abi } = require("./constant.js"); 
+const { abi } = require("./constant.js");
 
-const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
-const privateKey = process.env.PRIVATE_KEY;
-const wallet = new ethers.Wallet(privateKey, provider);
 const contractAddress = process.env.CONTRACT_ADDRESS;
-const receiverAddress = process.env.RECEIVER_ADDRESS;
 
-const blockpayUsdcContract = new ethers.Contract(
-  contractAddress,
-  abi,
-  wallet
-);
+let signer;
+let contract;
+let owner;
+let signer_address;
+
+async function connect() {
+  if (typeof window.ethereum !== "undefined") {
+    try {
+      await ethereum.request({ method: "eth_requestAccounts" });
+      connectButton.innerHTML = "Connected";
+      const accounts = await ethereum.request({ method: "eth_accounts" });
+      await updateWalletBalance(accounts[0]);
+    } catch (error) {
+      console.error(error);
+    }
+  } else {
+    
+  }
+}
+
+async function updateWalletBalance(address) {
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const balance = await provider.getBalance(address);
+}
+
+async function initialize() {
+  connect();
+  updateWalletBalance();
+  if (typeof window.ethereum !== "undefined") {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    signer = await provider.getSigner();
+    contract = new ethers.Contract(contractAddress, abi, signer);
+    owner = await contract.owner();
+    signer_address = await signer.getAddress();
+  }
+}
 
 // Helper function to format amounts for USDC (6 decimals) and ETH (18 decimals)
 const formatUsdcAmount = (amount) =>
@@ -32,8 +60,12 @@ async function fundContract(amountInEth) {
   }
 }
 
-async function withdrawUSDC(amount) {
+async function withdrawUSDC(receiverAddress,amount) {
   try {
+    if (owner !== signer_address) {
+      console.error("Only the contract owner can withdraw USDC.");
+      return;
+    }
     const formattedAmount = formatUsdcAmount(amount);
     console.log(`Withdrawing ${amount} USDC to ${receiverAddress}...`);
     const tx = await blockpayUsdcContract.withdrawUSDC(
@@ -47,8 +79,12 @@ async function withdrawUSDC(amount) {
   }
 }
 
-async function processPayment(amount) {
+async function processPayment(receiverAddress,amount) {
   try {
+      if (owner !== signer_address) {
+        console.error("Only the contract owner can process payment.");
+        return;
+      }
     const formattedAmount = formatUsdcAmount(amount);
     console.log(
       `Processing payment of ${amount} USDC to ${receiverAddress}...`
@@ -64,19 +100,12 @@ async function processPayment(amount) {
   }
 }
 
-async function checkEthPrice() {
+async function burnUsdcToUsd(receiverAddress,amount) {
   try {
-    console.log("Checking ETH price...");
-    const tx = await blockpayUsdcContract.checkEthPrice();
-    await tx.wait();
-    console.log("ETH price checked.");
-  } catch (error) {
-    console.error("Error checking ETH price:", error);
-  }
-}
-
-async function burnUsdcToUsd(amount) {
-  try {
+      if (owner !== signer_address) {
+        console.error("Only the contract owner can start burn USDC to USD.");
+        return;
+      }
     const formattedAmount = formatUsdcAmount(amount);
     console.log(`Burning ${amount} USDC for USD...`);
     const tx = await blockpayUsdcContract.burnUsdcToUsd(
@@ -115,13 +144,25 @@ async function getActualUSDCBalance() {
   }
 }
 
+async function getExpectedUSDCAmount(amountInEth) {
+  try {
+    const actualBalance = await blockpayUsdcContract.getExpectedUSDCAmount(amountInEth);
+    console.log(
+      `Expected USDC amount: ${ethers.utils.formatUnits(actualBalance, 6)} USDC`
+    );
+  } catch (error) {
+    console.error("Error getting USDC balance:", error);
+  }
+}
+
 // Exporting the functions to be used in test files
 module.exports = {
+  initialize,
   fundContract,
   withdrawUSDC,
   processPayment,
-  checkEthPrice,
   burnUsdcToUsd,
   getTotalFundsUSDC,
   getActualUSDCBalance,
+  getExpectedUSDCAmount,
 };

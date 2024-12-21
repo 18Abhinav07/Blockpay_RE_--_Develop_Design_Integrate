@@ -36,24 +36,21 @@ contract BlockpayUsdc is Ownable {
 
     // State Variables
     address public priceFeed;
-
     address payable USDC;
     address payable WETH;
 
     ISwapRouter public immutable swapRouter;
     uint256 private s_totalFundsUSDC;
-    uint256 private constant ETH_DECIMALS = 1e18;
     uint256 private constant USDC_DECIMALS = 1e6;
-    uint256 private constant USDC_DECIMAL_PRECISION = 1e12;
     uint256 private constant PRICE_FEED_DECIMALS = 1e8;
-    uint256 private USD_LIQUIDITY = 10000000e18; // In ether decimals of 18
+    uint256 private constant USDC_DECIMAL_PRECISION = 1e12;
+    uint256 private constant ETH_DECIMALS = 1e18;
 
-    uint256 private constant MINIMUM_AMOUNT_TO_FUND = 100 * USDC_DECIMALS; // in terms of USDC
+    uint256 private USD_LIQUIDITY = 10_000_000e18;
+    uint256 private constant MINIMUM_AMOUNT_TO_FUND = 100 * USDC_DECIMALS;
     uint256 private constant SLIPPAGE_TOLERANCE = 50;
-    uint256 private lastEthPriceUSD;
-    uint256 private constant PRICE_GAIN_THRESHOLD = 20 * PRICE_FEED_DECIMALS; // 20 USD increase in price
 
-    mapping(address => uint256) private s_usersToUsdDeposits;
+    mapping(address => uint256) private s_usersToUSDDeposits;
 
     using PriceConverter for uint256;
 
@@ -67,18 +64,16 @@ contract BlockpayUsdc is Ownable {
         emit ContractDeployed(owner());
     }
 
-    function withdrawUSDC(uint256 amount, address to) external onlyOwner {
-        uint256 actualBalance = IERC20(USDC).balanceOf(address(this));
-        if (amount > actualBalance || amount > s_totalFundsUSDC) {
-            revert Payroll__ContractHasNoFunds();
-        }
-
-        bool success = IERC20(USDC).transfer(to, amount);
-        if (!success) {
-            revert Payroll__WithdrawFailed();
-        }
-
-        s_totalFundsUSDC -= amount;
+    function mintUSDCBasedOnUSDPool() public onlyOwner {
+        console.log("-----------> MINTING USDC BASED ON USD POOL <-------------");
+        console.log(
+            "-----------> CONTRACTS USDC BALANCE BEFORE MINT <-------------",
+            IERC20(USDC).balanceOf(address(swapRouter))
+        );
+        MockUsdc(USDC).mint(address(swapRouter), (USD_LIQUIDITY / USDC_DECIMAL_PRECISION));
+        console.log(
+            "-----------> CONTRACTS USDC BALANCE AFTER MINT <-------------", IERC20(USDC).balanceOf(address(swapRouter))
+        );
     }
 
     function fundContract() public payable {
@@ -90,8 +85,6 @@ contract BlockpayUsdc is Ownable {
         console.log("------------------> EXPECTED USDC: ", expectedUSDC);
         uint256 minAmountOut = expectedUSDC * (10000 - SLIPPAGE_TOLERANCE) / (10000 * USDC_DECIMAL_PRECISION);
         console.log("------------------> MINIMUM AMOUNT OUT: ", minAmountOut);
-
-        MockUsdc(USDC).mint(address(swapRouter), 2 * minAmountOut);
 
         console.log("------------------> SENDER: ", msg.sender);
         console.log("------------------> SENDERS ETH BALANCE:", msg.sender.balance);
@@ -111,8 +104,6 @@ contract BlockpayUsdc is Ownable {
         emit SwapCompleted(amountInETH, amountOutUSDC);
         emit ContractFunded(msg.sender, amountOutUSDC);
         s_totalFundsUSDC += amountOutUSDC;
-
-        lastEthPriceUSD = PriceConverter.conversionPrice(priceFeed);
     }
 
     function processPayment(address _address, uint256 _amountUSDC) public onlyOwner {
@@ -132,32 +123,6 @@ contract BlockpayUsdc is Ownable {
 
         emit PaymentProcessed(_address, _amountUSDC);
         s_totalFundsUSDC -= _amountUSDC;
-    }
-
-    function checkEthPrice() public onlyOwner {
-        uint256 currentEthPrice = PriceConverter.conversionPrice(priceFeed);
-        bool thresholdMet = false;
-
-        if (currentEthPrice > lastEthPriceUSD + PRICE_GAIN_THRESHOLD) {
-            thresholdMet = true;
-            triggerEthSale();
-        }
-
-        emit EthPriceChecked(lastEthPriceUSD, currentEthPrice, thresholdMet);
-        lastEthPriceUSD = currentEthPrice;
-    }
-
-    function triggerEthSale() internal {
-        uint256 ethBalance = address(WETH).balance;
-        if (ethBalance > 10 ether) {
-            MockWeth(WETH).withdraw(ethBalance - 10 ether);
-            // now we withdraw the excess amount of eth from the weth and will sell it but
-            // that function is not made yet so we capture the total sale amount.
-
-            uint256 usdReceived = getExpectedUSDCAmount(ethBalance);
-            USD_LIQUIDITY += usdReceived;
-            emit EthSoldForUSD(ethBalance, usdReceived); // Emit sale event
-        }
     }
 
     function swapETHToUSDC(uint256 amountInETH, uint256 minAmountOut) internal returns (uint256) {
@@ -182,7 +147,7 @@ contract BlockpayUsdc is Ownable {
         }
     }
 
-    function burnUsdcToUsd(address from,uint256 amount) public onlyOwner {
+    function burnUSDCToUSD(address from, uint256 amount) public onlyOwner {
         // This function will burn the USDC and mint the USD in the contract
 
         console.log("SENDERS USDC BALANCE BEFORE BURN: ", IERC20(USDC).balanceOf(from));
@@ -195,10 +160,10 @@ contract BlockpayUsdc is Ownable {
         MockWeth(WETH).burn(address(swapRouter), wethToBurn);
         console.log("ROUTERS WETH BALANCE AFTER BURN: ", IERC20(WETH).balanceOf(address(swapRouter)));
 
-        s_usersToUsdDeposits[from] += amount;
+        s_usersToUSDDeposits[from] += amount;
         USD_LIQUIDITY -= amount;
 
-        console.log("USER USD DEPOSITS AFTER BURN: ", s_usersToUsdDeposits[from]);
+        console.log("USER USD DEPOSITS AFTER BURN: ", s_usersToUSDDeposits[from]);
         console.log("USD LIQUIDITY AFTER BURN: ", USD_LIQUIDITY);
     }
 
@@ -232,8 +197,8 @@ contract BlockpayUsdc is Ownable {
         return address(swapRouter);
     }
 
-    function getUserUsdDeposits(address _address) public view returns (uint256) {
-        return s_usersToUsdDeposits[_address];
+    function getUserUSDDeposits(address _address) public view returns (uint256) {
+        return s_usersToUSDDeposits[_address];
     }
 
     receive() external payable {

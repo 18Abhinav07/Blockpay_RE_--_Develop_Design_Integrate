@@ -27,7 +27,6 @@ contract MockWeth is ERC20, Ownable, Pausable, ReentrancyGuard {
     uint256 public totalEthWithdrawn;
     uint256 public totalBurned;
 
-
     constructor() ERC20("Wrapped Ether", "WETH") Ownable(msg.sender) {}
 
     /**

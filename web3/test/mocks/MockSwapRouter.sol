@@ -46,7 +46,11 @@ contract MockSwapRouter is Ownable, ReentrancyGuard {
         IERC20(WETH).safeTransferFrom(msg.sender, address(this), params.amountIn);
 
         // Check if the router has enough USDC to provide the swap
+        console.log("----->AMOUNT IN WETH: ", params.amountIn);
+        console.log("----->CONVERSION RATE: ", params.amountIn.getConversionRate(priceFeed));
         uint256 amountOutUSDC = params.amountIn.getConversionRate(priceFeed) / PRECISION;
+
+        console.log("--------->AMOUNT OUT USDC: ", amountOutUSDC);
         require(IERC20(USDC).balanceOf(address(this)) >= amountOutUSDC, "Insufficient USDC liquidity");
 
         console.log("ROUTER's WETH BALANCE: ", IERC20(WETH).balanceOf(address(this)));
