@@ -2,10 +2,10 @@
 pragma solidity ^0.8.20;
 
 import {Script, console} from "lib/forge-std/src/Script.sol";
-import {MockUsdc} from "../test/mocks/MockUsdc.sol";
-import {MockWeth} from "../test/mocks/MockWeth.sol";
-import {MockSwapRouter} from "../test/mocks/MockSwapRouter.sol";
-import {BlockpayUsdc} from "../src/BlockpayUsdc.sol";
+import {MockUsdc} from "../../test/mocks/MockUsdc.sol";
+import {MockWeth} from "../../test/mocks/MockWeth.sol";
+import {MockSwapRouter} from "../../test/mocks/MockSwapRouter.sol";
+import {BlockpayUsdc} from "src/BlockpayUSDC_v_0.0.2/BlockpayUsdc.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract DeployBlockpayUsdc is Script {

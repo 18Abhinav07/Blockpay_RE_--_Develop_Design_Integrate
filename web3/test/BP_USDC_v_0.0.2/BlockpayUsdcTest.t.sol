@@ -3,16 +3,16 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/Script.sol";
-import {PriceConverter} from "src/PriceConverterAndAggregator.sol";
+import {PriceConverter} from "src/BlockpayUSDC_v_0.0.2/PriceConverterAndAggregator.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {MockWeth} from "test/mocks/MockWeth.sol";
 import {MockUsdc} from "test/mocks/MockUsdc.sol";
 import {MockSwapRouter} from "test/mocks/MockSwapRouter.sol";
-import {BlockpayUsdc} from "src/BlockpayUsdc.sol";
+import {BlockpayUsdc} from "src/BlockpayUSDC_v_0.0.2/BlockpayUsdc.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {DeployBlockpayUsdc} from "script/DeployBlockpayUsdc.s.sol";
+import {DeployBlockpayUsdc} from "script/BlockpayUSDC_v_0.0.2/DeployBlockpayUsdc.s.sol";
 
 contract blockpayUsdcTest is Test {
     BlockpayUsdc blockpay;

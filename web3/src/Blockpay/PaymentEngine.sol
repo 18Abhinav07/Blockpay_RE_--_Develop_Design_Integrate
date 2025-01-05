@@ -25,6 +25,7 @@ contract PaymentEngine is Ownable, ReentrancyGuard, Pausable {
     error Engine_InvalidPriceFeed();
     error Engine_TransferFailed();
     error Engine_UnauthorizedMint(address sender);
+    error Engine_CannotGetBlockcoin(uint256 amount);
 
     // Constants
     uint256 private constant PRECISION = 1e18;
@@ -74,23 +75,40 @@ contract PaymentEngine is Ownable, ReentrancyGuard, Pausable {
      * @param _amount Amount of BlockCoin to check.
      * @return True if BlockCoin can be sent, otherwise false.
      */
-    function canSendBlockCoin(uint256 _amount) public view returns (bool) {
+    function canSendBlockCoin(uint256 _amount) public returns (bool) {
         uint256 totalSupply = StableToken(BLOCKCOIN).totalSupply();
         uint256 minRequiredBalance = (totalSupply * MIN_CONTRACT_BALANCE_RATIO) / PRECISION;
 
-        console.log("[INFO] Total Supply:", totalSupply);
-        console.log("[INFO] Minimum Required Balance:", minRequiredBalance);
+        console.log("=== SENDING CHECK BLOCK ===");
+        console.log("[INFO] Total Supply:", toDecimal(totalSupply));
+        console.log("[INFO] Minimum Required Balance:", toDecimal(minRequiredBalance));
 
         uint256 currentBalance = StableToken(BLOCKCOIN).balanceOf(address(this));
+        console.log("[INFO] Current Balance Of Engine:", toDecimal(currentBalance));
 
-        console.log("[INFO] Current Balance:", currentBalance);
+        // Check if current balance is sufficient
+        if (currentBalance >= (_amount + minRequiredBalance)) {
+            return true;
+        } else {
+            console.log("[INFO] Balance Not Enough");
+            uint256 requiredMintAmount =
+                s_totalCollateralValueUSD > totalSupply ? s_totalCollateralValueUSD - totalSupply : 0;
 
-        if (currentBalance > _amount) {
-            console.log("[INFO] Balance after deduction:", currentBalance - _amount);
-            if ((currentBalance - _amount) >= minRequiredBalance) {
-                return true;
+            console.log("[INFO MINT] Required Mint Amount:", toDecimal(requiredMintAmount));
+
+            uint256 adjustedBalance = currentBalance + requiredMintAmount;
+            if (adjustedBalance >= _amount) {
+                uint256 remainingBalance = adjustedBalance - _amount;
+
+                console.log("[INFO] Balance after new mint and deduction:", toDecimal(remainingBalance));
+                if (remainingBalance >= minRequiredBalance) {
+                    mint(requiredMintAmount);
+                    return true;
+                }
             }
         }
+
+        console.log("[INFO] Cannot Send BlockCoin");
         return false;
     }
 
@@ -101,7 +119,7 @@ contract PaymentEngine is Ownable, ReentrancyGuard, Pausable {
     function mint(uint256 _amount) internal whenNotPaused {
         if (_amount <= 0) revert Engine_InvalidAmount(_amount);
 
-        console.log("[MINT] Minting BlockCoin Amount:", _amount);
+        console.log("[MINT] Minting BlockCoin Amount:", toDecimal(_amount));
 
         StableToken(BLOCKCOIN).mint(address(this), _amount);
         emit Minted(msg.sender, _amount);
@@ -119,10 +137,11 @@ contract PaymentEngine is Ownable, ReentrancyGuard, Pausable {
         uint256 usdValue = _getUSDValue(_token, _amount);
 
         console.log("[DEPOSIT] Collateral Token:", _token);
-        console.log("[DEPOSIT] Collateral Amount:", _amount);
-        console.log("[DEPOSIT] USD Value:", usdValue);
+        console.log("[DEPOSIT] Collateral Amount:", toDecimal(_amount));
+        console.log("[DEPOSIT] USD Value:", toDecimal(usdValue));
 
         if (_token == address(0)) {
+            console.log("[DEPOSIT] Deposited BY:", msg.sender);
             if (msg.value != _amount) revert Engine_InvalidAmount(msg.value);
             s_collateralBalances[address(0)] += msg.value;
         } else {
@@ -145,8 +164,8 @@ contract PaymentEngine is Ownable, ReentrancyGuard, Pausable {
         uint256 usdValue = _getUSDValue(_token, _amount);
 
         console.log("[WITHDRAW] Collateral Token:", _token);
-        console.log("[WITHDRAW] Collateral Amount:", _amount);
-        console.log("[WITHDRAW] USD Value:", usdValue);
+        console.log("[WITHDRAW] Collateral Amount:", toDecimal(_amount));
+        console.log("[WITHDRAW] USD Value:", toDecimal(usdValue));
 
         s_collateralBalances[_token] -= _amount;
         s_totalCollateralValueUSD -= usdValue;
@@ -178,33 +197,28 @@ contract PaymentEngine is Ownable, ReentrancyGuard, Pausable {
         uint256 blockCoinAmount = (usdValue * (PRECISION - PLATFORM_FEE_PERCENT)) / PRECISION;
 
         console.log("[PURCHASE] Collateral Token:", _token);
-        console.log("[PURCHASE] Collateral Amount:", _tokenAmount);
-        console.log("[PURCHASE] USD Value:", usdValue);
-        console.log("[PURCHASE] BlockCoin Amount:", blockCoinAmount);
+        console.log("[PURCHASE] Collateral Amount:", toDecimal(_tokenAmount));
+        console.log("[PURCHASE] USD Value:", toDecimal(usdValue));
+        console.log("[PURCHASE] BlockCoin Amount:", toDecimal(blockCoinAmount));
 
         if (!canSendBlockCoin(blockCoinAmount)) {
-            uint256 totalSupply = StableToken(BLOCKCOIN).totalSupply();
-            uint256 requiredMintAmount = s_totalCollateralValueUSD - totalSupply;
-
-            console.log("[MINT] Required Mint Amount:", requiredMintAmount);
-
-            mint(requiredMintAmount);
+            revert Engine_CannotGetBlockcoin(blockCoinAmount);
         }
 
         depositCollateral(_token, _tokenAmount);
-        if (_token == address(0)) {
-            require(msg.value > 0, "No ETH sent");
-            s_collateralBalances[address(0)] += msg.value;
-        } else {
-            IERC20(_token).safeTransferFrom(msg.sender, address(this), _tokenAmount);
-            s_collateralBalances[_token] += _tokenAmount;
-        }
+        // if (_token == address(0)) {
+        //     require(msg.value > 0, "No ETH sent");
+        //     s_collateralBalances[address(0)] += msg.value;
+        // } else {
+        //     IERC20(_token).safeTransferFrom(msg.sender, address(this), _tokenAmount);
+        //     s_collateralBalances[_token] += _tokenAmount;
+        // }
         IERC20(BLOCKCOIN).safeTransfer(_to, blockCoinAmount);
         s_totalCollateralValueUSD += usdValue;
         emit BlockCoinPurchased(msg.sender, _token, _tokenAmount, blockCoinAmount);
     }
 
-     /**
+    /**
      * @notice Purchases BlockCoin using collateral tokens.
      * @param _fiatAmount Amount of the fiat deposited to mint the token use.
      * @param _to Address to send the purchased BlockCoin.
@@ -218,10 +232,12 @@ contract PaymentEngine is Ownable, ReentrancyGuard, Pausable {
     {
         if (_fiatAmount <= 0) revert Engine_InvalidAmount(_fiatAmount);
         uint256 blockCoinAmount = (_fiatAmount * (PRECISION - PLATFORM_FEE_PERCENT)) / PRECISION;
+
+        // if the contract is the one getting the coins then mint directly.
         mint(_fiatAmount);
 
-        console.log("[PURCHASE] Fiat Amount: ", _fiatAmount);
-        console.log("[PURCHASE] BlockCoin Amount:", blockCoinAmount);
+        console.log("[PURCHASE] Fiat Amount: ", toDecimal(_fiatAmount));
+        console.log("[PURCHASE] BlockCoin Amount:", toDecimal(blockCoinAmount));
 
         if (_to != address(this)) {
             IERC20(BLOCKCOIN).safeTransfer(_to, blockCoinAmount);
@@ -229,7 +245,6 @@ contract PaymentEngine is Ownable, ReentrancyGuard, Pausable {
         s_totalCollateralValueUSD += _fiatAmount;
         emit BlockCoinPurchasedWithFiat(msg.sender, _fiatAmount, blockCoinAmount);
     }
-
 
     /**
      * @notice Retrieves the USD value of a specified amount of collateral.
@@ -327,6 +342,32 @@ contract PaymentEngine is Ownable, ReentrancyGuard, Pausable {
      */
     function getTotalSupply() external view returns (uint256) {
         return StableToken(BLOCKCOIN).totalSupply();
+    }
+
+    function toDecimal(uint256 value) internal pure returns (string memory) {
+        // Convert the value from 1e18 precision to a standard decimal representation
+        uint256 integerPart = value / PRECISION;
+        uint256 fractionalPart = value % PRECISION / (PRECISION / 1000); // Display up to 3 decimal places
+        return string(abi.encodePacked(uintToString(integerPart), ".", uintToString(fractionalPart)));
+    }
+
+    function uintToString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
     }
 
     receive() external payable {

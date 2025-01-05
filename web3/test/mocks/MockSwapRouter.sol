@@ -9,7 +9,7 @@ import {MockV3Aggregator} from "./MockV3Aggregator.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import {MockUsdc} from "./MockUsdc.sol";
 import {console} from "forge-std/Script.sol";
-import {PriceConverter} from "src/PriceConverterAndAggregator.sol";
+import {PriceConverter} from "src/BlockpayUSDC_v_0.0.2/PriceConverterAndAggregator.sol";
 
 contract MockSwapRouter is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;

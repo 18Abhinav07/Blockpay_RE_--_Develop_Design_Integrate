@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.20;
 
-import {Script, console} from "forge-std/Script.sol";
-import {MockV3Aggregator} from "../test/mocks/MockV3Aggregator.sol";
-import {MockWeth} from "../test/mocks/MockWeth.sol";
-import {MockUsdc} from "../test/mocks/MockUsdc.sol";
-import {MockSwapRouter} from "../test/mocks/MockSwapRouter.sol";
+import {Script, console} from "../../lib/forge-std/src/Script.sol";
+import {MockV3Aggregator} from "../../test/mocks/MockV3Aggregator.sol";
+import {MockWeth} from "../../test/mocks/MockWeth.sol";
+import {MockUsdc} from "../../test/mocks/MockUsdc.sol";
+import {MockSwapRouter} from "../../test/mocks/MockSwapRouter.sol";
 
 contract HelperConfig is Script {
     struct NetworkConfig {
